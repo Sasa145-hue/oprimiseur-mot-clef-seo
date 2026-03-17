@@ -1,3 +1,6 @@
+import { analyzeKeywords, generateOptimizedText } from './utils/gemini'
+
+
 import { useState, useCallback } from 'react'
 import CsvUploader from './components/CsvUploader'
 import CrawlSection from './components/CrawlSection'
