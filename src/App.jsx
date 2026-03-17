@@ -5,7 +5,7 @@ import ApiKeyInput from './components/ApiKeyInput'
 import KeywordList from './components/KeywordList'
 import TextDisplay from './components/TextDisplay'
 import { parseKeywordCSV } from './utils/csvParser'
-import { analyzeKeywords, generateOptimizedText } from './utils/anthropic'
+import { analyzeKeywords, generateOptimizedText } from './utils/gemini'
 
 export default function App() {
   // Configuration state
@@ -48,7 +48,7 @@ export default function App() {
 
   const handleAnalyze = async () => {
     const totalKw = Object.values(csvData).reduce((acc, d) => acc + d.length, 0)
-    if (!apiKey.trim()) { setError('Veuillez saisir votre clé API Anthropic.'); return }
+    if (!apiKey.trim()) { setError('Veuillez saisir votre clé API Gemini.'); return }
     if (!pageText) { setError('Veuillez d\'abord crawler une page.'); return }
     if (totalKw === 0) { setError('Veuillez importer au moins un fichier CSV.'); return }
 
@@ -137,7 +137,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-              Powered by Claude
+              Powered by Salif Exosens
             </span>
           </div>
         </div>
