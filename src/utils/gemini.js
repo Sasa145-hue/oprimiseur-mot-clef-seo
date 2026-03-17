@@ -1,4 +1,4 @@
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent'
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
 
 async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 2000) {
   const res = await fetch(`${API_URL}?key=${apiKey}`, {
