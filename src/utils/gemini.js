@@ -1,19 +1,24 @@
-const API_URL = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-sonnet-4-20250514'
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
 
-function makeHeaders(apiKey) {
-  return {
-    'Content-Type': 'application/json',
-    'x-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
-    'anthropic-dangerous-direct-browser-calls': 'true',
+async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 2000) {
+  const res = await fetch(`${API_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || `Erreur API Gemini : ${res.status}`)
   }
+
+  const data = await res.json()
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }
 
-/**
- * Analyse keywords against page content.
- * Returns a structured list of missing/underrepresented keywords.
- */
 export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2gram, keywords3gram) {
   const formatList = (list, label) => {
     if (!list || list.length === 0) return ''
@@ -26,8 +31,7 @@ export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2
     formatList(keywords2gram, 'Mots-clés 2-gram') +
     formatList(keywords3gram, 'Mots-clés 3-gram')
 
-  const systemPrompt = `Tu es un expert SEO on-page francophone. Tu analyses du contenu web et identifies les opportunités d'optimisation avec des mots-clés.
-Tu réponds UNIQUEMENT avec un JSON valide, sans markdown ni explication.`
+  const systemPrompt = `Tu es un expert SEO on-page francophone. Tu analyses du contenu web et identifies les opportunités d'optimisation avec des mots-clés. Tu réponds UNIQUEMENT avec un JSON valide, sans markdown ni explication.`
 
   const userPrompt = `Voici le texte extrait de la page web à analyser :
 
@@ -57,46 +61,18 @@ Ta tâche :
 
 Retourne entre 10 et 30 mots-clés, triés par priorité décroissante. JSON pur uniquement.`
 
-  const body = {
-    model: MODEL,
-    max_tokens: 2000,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
-  }
-
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: makeHeaders(apiKey),
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `Erreur API Anthropic : ${res.status}`)
-  }
-
-  const data = await res.json()
-  const content = data.content?.[0]?.text || ''
-
-  // Extract JSON from response
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 2000)
   const jsonMatch = content.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Réponse IA invalide : JSON introuvable')
-
   const parsed = JSON.parse(jsonMatch[0])
   if (!Array.isArray(parsed.keywords)) throw new Error('Format JSON inattendu')
-
   return parsed.keywords
 }
 
-/**
- * Generate optimized text incorporating selected keywords.
- * Returns the rewritten text with keywords marked for highlighting.
- */
 export async function generateOptimizedText(apiKey, originalText, selectedKeywords) {
   const kwList = selectedKeywords.map((k) => `"${k.keyword}"`).join(', ')
 
-  const systemPrompt = `Tu es un expert en rédaction web SEO francophone. Tu réécris du contenu en intégrant naturellement des mots-clés pour améliorer le référencement, sans dénaturer le sens original.
-Tu réponds UNIQUEMENT avec un JSON valide, sans markdown ni explication.`
+  const systemPrompt = `Tu es un expert en rédaction web SEO francophone. Tu réécris du contenu en intégrant naturellement des mots-clés pour améliorer le référencement, sans dénaturer le sens original. Tu réponds UNIQUEMENT avec un JSON valide, sans markdown ni explication.`
 
   const userPrompt = `Voici le texte original de la page :
 
@@ -110,9 +86,7 @@ ${kwList}
 Instructions :
 - Réécris le texte en intégrant ces mots-clés de façon naturelle et fluide
 - Conserve le sens, le ton et la structure du texte original
-- Ne force pas l'intégration si cela nuit à la lisibilité
-- Pour chaque mot-clé effectivement intégré, entoure-le avec le marqueur [[KEYWORD]] et [[/KEYWORD]]
-  Exemple : "Notre [[KEYWORD]]service de référencement[[/KEYWORD]] est..."
+- Pour chaque mot-clé effectivement intégré, entoure-le avec [[KEYWORD]] et [[/KEYWORD]]
 - Retourne UNIQUEMENT un JSON au format :
 
 {
@@ -122,32 +96,10 @@ Instructions :
 
 JSON pur uniquement.`
 
-  const body = {
-    model: MODEL,
-    max_tokens: 4000,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
-  }
-
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: makeHeaders(apiKey),
-    body: JSON.stringify(body),
-  })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `Erreur API Anthropic : ${res.status}`)
-  }
-
-  const data = await res.json()
-  const content = data.content?.[0]?.text || ''
-
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
   const jsonMatch = content.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Réponse IA invalide : JSON introuvable')
-
   const parsed = JSON.parse(jsonMatch[0])
   if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
-
   return parsed
 }
