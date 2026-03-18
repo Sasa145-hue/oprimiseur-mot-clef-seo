@@ -6,35 +6,19 @@ async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 4000) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
+      generationConfig: { 
+        maxOutputTokens: maxTokens, 
+        temperature: 0.3,
+        response_mime_type: 'application/json'
+      },
     }),
   })
-
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.error?.message || `Erreur API Gemini : ${res.status}`)
   }
-
   const data = await res.json()
   return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-}
-
-function parseJSON(content) {
-  let str = content
-  const fenced = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/)
-  if (fenced) str = fenced[1]
-  else {
-    const start = content.indexOf('{')
-    const end = content.lastIndexOf('}')
-    if (start !== -1 && end !== -1) str = content.slice(start, end + 1)
-  }
-  str = str
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/,\s*([\]}])/g, '$1')
-    .replace(/'/g, '"')
-    .trim()
-  return JSON.parse(str)
 }
 
 export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2gram, keywords3gram) {
@@ -43,13 +27,12 @@ export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2
     const top = list.slice(0, 50)
     return `\n### ${label}\n` + top.map((k) => `- "${k.keyword}" (frequence: ${k.frequency})`).join('\n')
   }
-
   const kwSection =
     formatList(keywords1gram, 'Mots-cles 1-gram') +
     formatList(keywords2gram, 'Mots-cles 2-gram') +
     formatList(keywords3gram, 'Mots-cles 3-gram')
 
-  const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks, sans explication. Commence directement par { et termine par }.`
+  const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide.`
 
   const userPrompt = `Texte de la page :
 ${pageText.slice(0, 4000)}
@@ -57,11 +40,11 @@ ${pageText.slice(0, 4000)}
 Mots-cles disponibles :
 ${kwSection}
 
-Retourne ce JSON exact (entre 10 et 20 items) :
+Retourne un JSON avec cette structure exacte (entre 10 et 20 items) :
 {"keywords":[{"keyword":"exemple","frequency":10,"gram":"1-gram","priority":"haute","reason":"explication courte"}]}`
 
   const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
-  const parsed = parseJSON(content)
+  const parsed = JSON.parse(content)
   if (!Array.isArray(parsed.keywords)) throw new Error('Format JSON inattendu')
   return parsed.keywords
 }
@@ -69,18 +52,18 @@ Retourne ce JSON exact (entre 10 et 20 items) :
 export async function generateOptimizedText(apiKey, originalText, selectedKeywords) {
   const kwList = selectedKeywords.map((k) => k.keyword).join(', ')
 
-  const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks, sans explication. Commence directement par { et termine par }.`
+  const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide.`
 
   const userPrompt = `Texte original :
 ${originalText.slice(0, 4000)}
 
 Mots-cles a integrer : ${kwList}
 
-Retourne ce JSON exact :
+Retourne un JSON avec cette structure exacte :
 {"optimized_text":"texte reecrit avec [[KEYWORD]]mot-cle[[/KEYWORD]] pour chaque mot integre","integrated_keywords":["mot1","mot2"]}`
 
   const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
-  const parsed = parseJSON(content)
+  const parsed = JSON.parse(content)
   if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
   return parsed
 }
