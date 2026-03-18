@@ -52,35 +52,44 @@ Retourne un JSON avec cette structure exacte (entre 10 et 20 items) :
 export async function generateOptimizedText(apiKey, originalText, selectedKeywords) {
   const kwList = selectedKeywords.map((k) => k.keyword).join(', ')
 
-  const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide.`
+  const systemPrompt = `Tu es un expert SEO. Tu vas réécrire un texte en intégrant des mots-clés.`
 
   const userPrompt = `Texte original :
 ${originalText.slice(0, 3000)}
 
-Mots-cles a integrer : ${kwList}
+Mots-clés à intégrer : ${kwList}
 
-IMPORTANT : Dans le JSON, utilise uniquement des apostrophes simples dans le texte, pas de guillemets doubles.
-Entoure chaque mot-cle integre avec [[KEYWORD]] et [[/KEYWORD]].
+Réécris ce texte en intégrant naturellement ces mots-clés.
+Entoure chaque mot-clé intégré avec [[KEYWORD]] et [[/KEYWORD]].
+Réponds UNIQUEMENT avec le texte réécrit, sans JSON, sans explication, sans balises.`
 
-Retourne ce JSON :
-{"optimized_text":"texte ici sans guillemets doubles","integrated_keywords":["mot1","mot2"]}`
+  // Appel sans JSON forcé pour le texte libre
+  const res = await fetch(`${API_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+      generationConfig: { maxOutputTokens: 8000, temperature: 0.3 },
+    }),
+  })
 
-  const content = await callGemini(apiKey, systemPrompt, userPrompt, 8000)
-  
-  let parsed
-  try {
-    parsed = JSON.parse(content)
-  } catch(e) {
-    // Tente d'extraire manuellement le optimized_text
-    const match = content.match(/"optimized_text"\s*:\s*"([\s\S]*?)"\s*,\s*"integrated_keywords"/)
-    if (!match) throw new Error('Format JSON inattendu')
-    const keywords = content.match(/"integrated_keywords"\s*:\s*\[([\s\S]*?)\]/)
-    parsed = {
-      optimized_text: match[1],
-      integrated_keywords: keywords ? keywords[1].split(',').map(k => k.trim().replace(/"/g, '')) : []
-    }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || `Erreur API Gemini : ${res.status}`)
   }
+
+  const data = await res.json()
+  const optimized_text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
   
-  if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
-  return parsed
+  if (!optimized_text) throw new Error('Réponse vide de Gemini')
+
+  // Extrait les mots-clés intégrés depuis les balises
+  const integrated_keywords = []
+  const regex = /\[\[KEYWORD\]\](.*?)\[\[\/KEYWORD\]\]/g
+  let match
+  while ((match = regex.exec(optimized_text)) !== null) {
+    integrated_keywords.push(match[1])
+  }
+
+  return { optimized_text, integrated_keywords }
 }
