@@ -55,15 +55,32 @@ export async function generateOptimizedText(apiKey, originalText, selectedKeywor
   const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide.`
 
   const userPrompt = `Texte original :
-${originalText.slice(0, 4000)}
+${originalText.slice(0, 3000)}
 
 Mots-cles a integrer : ${kwList}
 
-Retourne un JSON avec cette structure exacte :
-{"optimized_text":"texte reecrit avec [[KEYWORD]]mot-cle[[/KEYWORD]] pour chaque mot integre","integrated_keywords":["mot1","mot2"]}`
+IMPORTANT : Dans le JSON, utilise uniquement des apostrophes simples dans le texte, pas de guillemets doubles.
+Entoure chaque mot-cle integre avec [[KEYWORD]] et [[/KEYWORD]].
 
-  const content = await callGemini(apiKey, systemPrompt, userPrompt, 10000)
-  const parsed = JSON.parse(content)
+Retourne ce JSON :
+{"optimized_text":"texte ici sans guillemets doubles","integrated_keywords":["mot1","mot2"]}`
+
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 8000)
+  
+  let parsed
+  try {
+    parsed = JSON.parse(content)
+  } catch(e) {
+    // Tente d'extraire manuellement le optimized_text
+    const match = content.match(/"optimized_text"\s*:\s*"([\s\S]*?)"\s*,\s*"integrated_keywords"/)
+    if (!match) throw new Error('Format JSON inattendu')
+    const keywords = content.match(/"integrated_keywords"\s*:\s*\[([\s\S]*?)\]/)
+    parsed = {
+      optimized_text: match[1],
+      integrated_keywords: keywords ? keywords[1].split(',').map(k => k.trim().replace(/"/g, '')) : []
+    }
+  }
+  
   if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
   return parsed
 }
