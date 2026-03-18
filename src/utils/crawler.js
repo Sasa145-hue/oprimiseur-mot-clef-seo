@@ -1,4 +1,4 @@
-const CORS_PROXY = 'https://corsproxy.io/?'
+const CORS_PROXY = 'https://api.codetabs.com/v1/proxy?quest='
 
 /**
  * Fetch a URL via CORS proxy and extract visible text content,
