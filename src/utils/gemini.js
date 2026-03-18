@@ -87,7 +87,7 @@ Ta tâche :
 
 Retourne entre 10 et 30 mots-clés, triés par priorité décroissante. JSON pur uniquement.`
 
-  const content = await callGemini(apiKey, systemPrompt, userPrompt, 2000)
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
   const parsed = parseJSON(content)
   if (!Array.isArray(parsed.keywords)) throw new Error('Format JSON inattendu')
   return parsed.keywords
