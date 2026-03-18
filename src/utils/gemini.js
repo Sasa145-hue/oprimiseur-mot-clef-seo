@@ -19,6 +19,18 @@ async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 2000) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }
 
+function parseJSON(content) {
+  let str = content
+  const fenced = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/)
+  if (fenced) str = fenced[1]
+  else {
+    const obj = content.match(/\{[\s\S]*\}/)
+    if (obj) str = obj[0]
+  }
+  str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
+  return JSON.parse(str)
+}
+
 export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2gram, keywords3gram) {
   const formatList = (list, label) => {
     if (!list || list.length === 0) return ''
@@ -52,8 +64,8 @@ Ta tâche :
     {
       "keyword": "mot-clé exact",
       "frequency": 123,
-      "gram": "1-gram" | "2-gram" | "3-gram",
-      "priority": "haute" | "moyenne" | "faible",
+      "gram": "1-gram",
+      "priority": "haute",
       "reason": "Courte explication (max 80 chars)"
     }
   ]
@@ -62,9 +74,7 @@ Ta tâche :
 Retourne entre 10 et 30 mots-clés, triés par priorité décroissante. JSON pur uniquement.`
 
   const content = await callGemini(apiKey, systemPrompt, userPrompt, 2000)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Réponse IA invalide : JSON introuvable')
-  const parsed = JSON.parse(jsonMatch[0])
+  const parsed = parseJSON(content)
   if (!Array.isArray(parsed.keywords)) throw new Error('Format JSON inattendu')
   return parsed.keywords
 }
@@ -97,9 +107,7 @@ Instructions :
 JSON pur uniquement.`
 
   const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Réponse IA invalide : JSON introuvable')
-  const parsed = JSON.parse(jsonMatch[0])
+  const parsed = parseJSON(content)
   if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
   return parsed
 }
