@@ -55,7 +55,7 @@ export async function generateOptimizedText(apiKey, originalText, selectedKeywor
   const systemPrompt = `Tu es un expert SEO. Tu vas réécrire un texte en intégrant des mots-clés.`
 
   const userPrompt = `Texte original :
-${originalText.slice(0, 6000)}
+${originalText.slice(0, 10000)}
 
 Mots-clés à intégrer : ${kwList}
 
@@ -69,7 +69,7 @@ Réponds UNIQUEMENT avec le texte réécrit, sans JSON, sans explication, sans b
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-      generationConfig: { maxOutputTokens: 8000, temperature: 0.3 },
+      generationConfig: { maxOutputTokens: 16000, temperature: 0.3 },
     }),
   })
 
