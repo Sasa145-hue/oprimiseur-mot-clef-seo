@@ -7,7 +7,7 @@ export default function ApiKeyInput({ apiKey, onChange }) {
     <div className="card p-5">
       <h2 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
-        Clé API Anthropic
+        Clé API Gemini
       </h2>
       <div className="relative">
         <input
