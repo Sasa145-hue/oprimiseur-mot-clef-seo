@@ -1,4 +1,4 @@
-const CORS_PROXY = 'https://api.allorigins.win/get?url='
+const CORS_PROXY = 'https://corsproxy.io/?'
 
 /**
  * Fetch a URL via CORS proxy and extract visible text content,
