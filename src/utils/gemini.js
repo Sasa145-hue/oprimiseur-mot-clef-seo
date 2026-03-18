@@ -27,7 +27,12 @@ function parseJSON(content) {
     const obj = content.match(/\{[\s\S]*\}/)
     if (obj) str = obj[0]
   }
+  // Nettoie les caractères de contrôle sauf \n \r \t
   str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
+  // Supprime les commentaires JSON style // ...
+  str = str.replace(/\/\/[^\n]*/g, '')
+  // Supprime les virgules en trop avant } ou ]
+  str = str.replace(/,\s*([\]}])/g, '$1')
   return JSON.parse(str)
 }
 
