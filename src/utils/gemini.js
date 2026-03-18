@@ -24,7 +24,7 @@ async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 10000) {
 export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2gram, keywords3gram) {
   const formatList = (list, label) => {
     if (!list || list.length === 0) return ''
-    const top = list.slice(0, 50)
+    const top = list.slice(0, 100)
     return `\n### ${label}\n` + top.map((k) => `- "${k.keyword}" (frequence: ${k.frequency})`).join('\n')
   }
   const kwSection =
@@ -35,7 +35,7 @@ export async function analyzeKeywords(apiKey, pageText, keywords1gram, keywords2
   const systemPrompt = `Tu es un expert SEO. Reponds UNIQUEMENT avec du JSON valide.`
 
   const userPrompt = `Texte de la page :
-${pageText.slice(0, 4000)}
+${pageText.slice(0, 10000)}
 
 Mots-cles disponibles :
 ${kwSection}
@@ -55,7 +55,7 @@ export async function generateOptimizedText(apiKey, originalText, selectedKeywor
   const systemPrompt = `Tu es un expert SEO. Tu vas réécrire un texte en intégrant des mots-clés.`
 
   const userPrompt = `Texte original :
-${originalText.slice(0, 3000)}
+${originalText.slice(0, 6000)}
 
 Mots-clés à intégrer : ${kwList}
 
