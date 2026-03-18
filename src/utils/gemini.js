@@ -20,17 +20,28 @@ async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 2000) {
 }
 
 function parseJSON(content) {
-  console.log('RAW GEMINI RESPONSE:', content) // DEBUG
+  // Extrait le JSON entre les backticks si présent
   let str = content
-  const fenced = content.match(/```(?:json)?\n?([\s\S]*?)\n?```/)
-  if (fenced) str = fenced[1]
-  else {
-    const obj = content.match(/\{[\s\S]*\}/)
-    if (obj) str = obj[0]
+    .replace(/^[\s\S]*?```(?:json)?/m, '')  // supprime tout avant ```json
+    .replace(/```[\s\S]*$/m, '')             // supprime tout après ```
+    .trim()
+  
+  // Si pas de backticks, cherche le premier { jusqu'au dernier }
+  if (!str.startsWith('{')) {
+    const start = content.indexOf('{')
+    const end = content.lastIndexOf('}')
+    if (start !== -1 && end !== -1) {
+      str = content.slice(start, end + 1)
+    }
   }
-  str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
-  str = str.replace(/\/\/[^\n]*/g, '')
-  str = str.replace(/,\s*([\]}])/g, '$1')
+  
+  // Nettoyage
+  str = str
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/,\s*([\]}])/g, '$1')
+    .trim()
+
   return JSON.parse(str)
 }
 
