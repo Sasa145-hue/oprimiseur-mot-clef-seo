@@ -13,7 +13,7 @@ export default function ApiKeyInput({ apiKey, onChange }) {
         <input
           type={show ? 'text' : 'password'}
           className="input pr-10"
-          placeholder="sk-ant-api03-…"
+          placeholder="AIza…"
           value={apiKey}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"
