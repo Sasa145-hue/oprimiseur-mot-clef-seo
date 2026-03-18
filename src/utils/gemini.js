@@ -1,6 +1,6 @@
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
-async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 4000) {
+async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens = 10000) {
   const res = await fetch(`${API_URL}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -43,7 +43,7 @@ ${kwSection}
 Retourne un JSON avec cette structure exacte (entre 10 et 20 items) :
 {"keywords":[{"keyword":"exemple","frequency":10,"gram":"1-gram","priority":"haute","reason":"explication courte"}]}`
 
-  const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 10000)
   const parsed = JSON.parse(content)
   if (!Array.isArray(parsed.keywords)) throw new Error('Format JSON inattendu')
   return parsed.keywords
@@ -62,7 +62,7 @@ Mots-cles a integrer : ${kwList}
 Retourne un JSON avec cette structure exacte :
 {"optimized_text":"texte reecrit avec [[KEYWORD]]mot-cle[[/KEYWORD]] pour chaque mot integre","integrated_keywords":["mot1","mot2"]}`
 
-  const content = await callGemini(apiKey, systemPrompt, userPrompt, 4000)
+  const content = await callGemini(apiKey, systemPrompt, userPrompt, 10000)
   const parsed = JSON.parse(content)
   if (!parsed.optimized_text) throw new Error('Format JSON inattendu')
   return parsed
