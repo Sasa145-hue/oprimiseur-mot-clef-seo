@@ -61,7 +61,7 @@ ${originalText.slice(0, 10000)}
 
 Mots-clés à intégrer : ${kwList}
 
-Réécris ce texte en intégrant naturellement ces mots-clés.
+Réécris ce texte en intégrant TOUS ces mots-clés naturellement dans le contenu. Certains peuvent déjà être présents — renforce-les si nécessaire, ajoute les autres de façon fluide.
 Entoure chaque mot-clé intégré avec [[KEYWORD]] et [[/KEYWORD]].
 Réponds UNIQUEMENT avec le texte réécrit, sans JSON, sans explication, sans balises.`
 
