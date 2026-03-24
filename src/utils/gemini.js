@@ -40,6 +40,8 @@ ${pageText.slice(0, 10000)}
 Mots-cles disponibles :
 ${kwSection}
 
+IMPORTANT : Identifie les mots-clés de la liste qui sont ABSENTS ou SOUS-REPRÉSENTÉS dans le texte (présents moins de 2 fois). Privilégie les 2-gram et 3-gram. Ne suggère PAS les mots-clés déjà très présents dans le texte.
+
 Retourne un JSON avec cette structure exacte (entre 10 et 20 items) :
 {"keywords":[{"keyword":"exemple","frequency":10,"gram":"1-gram","priority":"haute","reason":"explication courte"}]}`
 
